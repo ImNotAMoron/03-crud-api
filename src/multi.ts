@@ -75,7 +75,6 @@ if(cluster.isPrimary) {
 else if(cluster.isWorker) {
     const defaultPort = Number(process.env.PORT);
     if(isNaN(defaultPort)) throw "Port must be a number";
-    console.log(defaultPort);
     const server = new Server(defaultPort, new IpcProductManager());
     void server.run();
 }

@@ -51,10 +51,6 @@ export class Server {
             return {...product, id: productId};
         })
 
-        this.server.get("/api/port", async (request, response) => {
-            return this.port;
-        })
-
         this.server.delete<ProductId>("/api/products/:productId?", async (request, response) => {
             const params = request.params;
             const {data: productId, success} = zod.uuid().safeParse(params.productId);
