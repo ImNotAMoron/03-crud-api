@@ -1,6 +1,6 @@
 import {createProductSchema, ProductManager, productSchema} from "../products";
 import zod from "zod";
-import fastly from "fastify";
+import fastify from "fastify";
 
 type ProductId = {
     Params: {
@@ -15,8 +15,8 @@ export class Server {
     constructor(port: number, products: ProductManager) {
         this.port = port;
         this.products = products;
-        this.server = fastly({
-            logger: true
+        this.server = fastify({
+            logger: false
         });
 
         this.server.get<ProductId>("/api/products/:productId?", async (request, response) => {
@@ -24,8 +24,7 @@ export class Server {
             if(params.productId === undefined) return this.products.getAllProducts();
             const {data: productId, success} = zod.uuid().safeParse(params.productId);
             if(!success) return response.status(400).send({error: "ProductID is invalid"});
-            // if (productId === undefined) return products.products;
-            const product = products.getProduct(productId);
+            const product = await products.getProduct(productId);
             if (product === undefined) return response.status(404).send({error: "Product not found"});
             return product;
         })
@@ -36,7 +35,7 @@ export class Server {
             if (!success) {
                 return response.status(400).send({error: error.message, issues: error.issues});
             }
-            const newProduct = products.addProduct({id: crypto.randomUUID(), ...data});
+            const newProduct = await products.addProduct({id: crypto.randomUUID(), ...data});
             return response.status(201).send(newProduct)
         });
 
@@ -45,18 +44,22 @@ export class Server {
             const body = request.body;
             const {data: productId, success: productIdSuccess} = zod.uuid().safeParse(params.productId);
             if(!productIdSuccess) return response.status(400).send({error: "ProductID is invalid"});
-            if(!this.products.hasProduct(productId)) return response.status(404).send({error: "Product not found"});
+            if(!await this.products.hasProduct(productId)) return response.status(404).send({error: "Product not found"});
             const {data: product, success, error} = createProductSchema.safeParse(body);
             if (!success) return response.status(400).send({error: error.message, issues: error.issues});
-            this.products.setProduct(productId, product);
+            await this.products.setProduct(productId, product);
             return {...product, id: productId};
+        })
+
+        this.server.get("/api/port", async (request, response) => {
+            return this.port;
         })
 
         this.server.delete<ProductId>("/api/products/:productId?", async (request, response) => {
             const params = request.params;
             const {data: productId, success} = zod.uuid().safeParse(params.productId);
             if(!success) return response.status(400).send({error: "ProductID is invalid"});
-            const exist = this.products.deleteProduct(productId);
+            const exist = await this.products.deleteProduct(productId);
             if(exist) return response.status(204).send();
             else return response.status(404).send({error: "A product with this id doesn't exist"});
         })

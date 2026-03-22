@@ -1,24 +1,24 @@
 import type {CreateProduct, Product} from "./product.js";
 
 export class ProductManager {
-    private products;
-    addProduct(product: Product): Product {
+    protected products;
+    async addProduct(product: Product): Promise<Product> {
         this.products.set(product.id, product);
         return product;
     }
-    getProduct(id: string): Product | undefined {
+    async getProduct(id: string): Promise<Product | undefined> {
         return this.products.get(id);
     }
-    hasProduct(id: string): boolean {
+    async hasProduct(id: string): Promise<boolean> {
         return this.products.has(id);
     }
-    getAllProducts(): Product[] {
+    async getAllProducts(): Promise<Product[]> {
         return Array.from(this.products.values());
     }
-    setProduct(id: string, product: CreateProduct) {
+    async setProduct(id: string, product: CreateProduct): Promise<void> {
         this.products.set(id, {id: id, ...product});
     }
-    deleteProduct(id: string) {
+    async deleteProduct(id: string): Promise<boolean> {
         return this.products.delete(id);
     }
     constructor() {
